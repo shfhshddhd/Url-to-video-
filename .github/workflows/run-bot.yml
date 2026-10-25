@@ -66,5 +66,4 @@ jobs:
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           MAX_DOWNLOAD_MB: ${{ vars.MAX_DOWNLOAD_MB || '500' }}
-          MAX_UPLOAD_MB: ${{ vars.MAX_UPLOAD_MB }}
         run: python bot.py
