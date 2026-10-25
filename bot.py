@@ -92,7 +92,8 @@ async def url_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         log.exception("metadata extraction failed")
         kind = type(e).__name__
-        detail = re.sub(r"https?://\\S+", "[URL]", str(e)).strip()[:700] or "No additional error details available."\n        await status.edit_text(f"❌ Video details nahi nikal paaye. Error type: {kind}.\\n\\nReason: {detail}\\n\\nAgar YouTube ka bot-check, sign-in, ya JavaScript challenge error hai, to woh reason yahan dikh jayega. Public video URL dobara try karein.")
+        detail = re.sub(r"https?://\S+", "[URL]", str(e)).strip()[:700] or "No additional error details available."
+        await status.edit_text(f"❌ Video details nahi nikal paaye. Error type: {kind}.\n\nReason: {detail}\n\nAgar YouTube ka bot-check, sign-in, ya JavaScript challenge error hai, to woh reason yahan dikh jayega. Public video URL dobara try karein.")
 
 async def quality(update: Update, context: ContextTypes.DEFAULT_TYPE):
     q=update.callback_query; await q.answer()
