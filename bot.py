@@ -33,7 +33,7 @@ def safe_url(raw):
     return u
 
 def metadata(url):
-    opts = {"quiet": True, "no_warnings": True, "skip_download": True, "noplaylist": True, "socket_timeout": 20, "retries": 1}
+    opts = {"quiet": True, "no_warnings": True, "skip_download": True, "noplaylist": True, "socket_timeout": 25, "retries": 2, "extractor_retries": 2, "js_runtimes": {"deno": {}}, "remote_components": ["ejs:github"]}
     with yt_dlp.YoutubeDL(opts) as ydl: d = ydl.extract_info(url, download=False)
     if not d or d.get("entries") or d.get("_type") in ("playlist", "multi_video"):
         raise ValueError("Single video URL bhejein; playlist supported nahi hai.")
@@ -89,8 +89,9 @@ async def url_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             except Exception: log.info("Thumbnail not available")
         await status.edit_text(caption,parse_mode="Markdown",reply_markup=InlineKeyboardMarkup(rows))
     except Exception as e:
-        log.warning("metadata failed: %s",e)
-        await status.edit_text("❌ Video available nahi hai ya supported nahi hai. Public URL try karein; login/DRM/private links supported nahi hain.")
+        log.exception("metadata extraction failed")
+        kind = type(e).__name__
+        await status.edit_text(f"❌ Video details nahi nikal paaye. Error type: {kind}.\n\nGitHub Actions → Run bot logs mein `metadata extraction failed` ke aas-paas ka error dekhein. YouTube par JavaScript runtime/extractor ya temporary restriction ho sakti hai. Public video URL try karein.")
 
 async def quality(update: Update, context: ContextTypes.DEFAULT_TYPE):
     q=update.callback_query; await q.answer()
