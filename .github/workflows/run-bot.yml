@@ -18,12 +18,20 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
+      - name: Install Deno JavaScript runtime
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Verify Deno
+        run: deno --version
       - name: Install FFmpeg
         run: |
           sudo apt-get update
           sudo apt-get install -y ffmpeg
       - name: Install requirements
         run: python -m pip install --upgrade pip && pip install -r requirements.txt
+      - name: Verify yt-dlp and JavaScript runtime
+        run: python -m yt_dlp --version
       - name: Run bot
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
