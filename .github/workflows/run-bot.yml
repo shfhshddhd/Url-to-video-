@@ -1,0 +1,32 @@
+name: Video Downloader Bot
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 */6 * * *"
+permissions:
+  contents: read
+concurrency:
+  group: video-downloader-bot
+  cancel-in-progress: true
+jobs:
+  run:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install FFmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+      - name: Install requirements
+        run: python -m pip install --upgrade pip && pip install -r requirements.txt
+      - name: Run bot
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          MAX_UPLOAD_MB: ${{ vars.MAX_UPLOAD_MB || '49' }}
+          MAX_DOWNLOAD_MB: ${{ vars.MAX_DOWNLOAD_MB || '500' }}
+        run: python bot.py
