@@ -10,7 +10,8 @@ from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQu
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger("video-downloader")
 TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
-MAX_UPLOAD = int(os.getenv("MAX_UPLOAD_MB", "49")) * 1024 * 1024
+LOCAL_BOT_API = os.getenv("TELEGRAM_LOCAL_API", "0").strip().lower() in ("1", "true", "yes")
+MAX_UPLOAD = int(os.getenv("MAX_UPLOAD_MB", "1900" if LOCAL_BOT_API else "49")) * 1024 * 1024
 MAX_DOWNLOAD = int(os.getenv("MAX_DOWNLOAD_MB", "500")) * 1024 * 1024
 TMP = Path("/tmp/video-downloader"); TMP.mkdir(exist_ok=True)
 JOBS = {}; TTL = 1800
@@ -124,7 +125,7 @@ async def delivery(update: Update, context: ContextTypes.DEFAULT_TYPE):
             candidates=[p for p in Path(td).iterdir() if p.is_file() and not p.name.endswith((".part",".ytdl"))]
             if not candidates: raise ValueError("Download file create nahi hui.")
             path=max(candidates,key=lambda p:p.stat().st_size); size=path.stat().st_size
-            if size>MAX_UPLOAD: return await status.edit_text(f"❌ File {size/1048576:.1f} MB hai; configured upload cap {MAX_UPLOAD/1048576:.0f} MB. Lower quality select karein.")
+            if size>MAX_UPLOAD: return await status.edit_text(f"❌ File {size/1048576:.1f} MB hai; configured upload cap {MAX_UPLOAD/1048576:.0f} MB. " + ("Local Bot API Server configuration check karein." if LOCAL_BOT_API else "500 MB+ ke liye Local Bot API Server configure karein; normal Telegram API ki limit lagbhag 50 MB hai."))
             await status.edit_text(f"📤 Upload ho raha hai ({size/1048576:.1f} MB)…")
             with path.open("rb") as fp:
                 if mode=="video": await q.message.reply_video(video=fp,caption=j["info"]["title"][:900],supports_streaming=True,read_timeout=180,write_timeout=180,connect_timeout=30)
@@ -141,7 +142,10 @@ async def cancel_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 def main():
     if not TOKEN: raise SystemExit("Set TELEGRAM_BOT_TOKEN in GitHub Actions Secrets.")
-    app=Application.builder().token(TOKEN).build()
+    builder = Application.builder().token(TOKEN)
+    if LOCAL_BOT_API:
+        builder = builder.base_url(os.getenv("TELEGRAM_API_BASE_URL", "http://127.0.0.1:8081/bot")).base_file_url(os.getenv("TELEGRAM_FILE_BASE_URL", "http://127.0.0.1:8081/file/bot"))
+    app=builder.build()
     app.add_handler(CommandHandler("start",start)); app.add_handler(CommandHandler("help",start)); app.add_handler(CommandHandler("cancel",cancel))
     app.add_handler(CallbackQueryHandler(quality,pattern=r"^q:")); app.add_handler(CallbackQueryHandler(delivery,pattern=r"^d:")); app.add_handler(CallbackQueryHandler(cancel_button,pattern=r"^x:"))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND,url_message))
